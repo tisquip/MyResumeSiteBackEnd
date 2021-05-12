@@ -1,25 +1,25 @@
 ﻿namespace MyResumeSiteBackEnd.Models.ApiResponses
 {
-    public class Fixtures
+    public record Fixtures
     {
-        public FixturesData[] data { get; set; }
+        public FixturesData[] data { get; init; }
     }
 
-    public class FixturesData
+    public record FixturesData
     {
-        public int? id { get; set; }
-        public int? league_id { get; set; }
-        public int? season_id { get; set; }
-        public Scores scores { get; set; }
-        public Time time { get; set; }
-        public Standings standings { get; set; }
-        public bool? is_placeholder { get; set; }
-        public Team localTeam { get; set; }
-        public Team visitorTeam { get; set; }
-        public Venue venue { get; set; }
+        public int? id { get; init; }
+        public int? league_id { get; init; }
+        public int? season_id { get; init; }
+        public Scores scores { get; init; }
+        public Time time { get; init; }
+        public Standings standings { get; init; }
+        public bool? is_placeholder { get; init; }
+        public Team localTeam { get; init; }
+        public Team visitorTeam { get; init; }
+        public Venue venue { get; init; }
     }
 
-    public class Scores
+    public record Scores
     {
         public double? Localteam_Score { get; init; }
         public double? Visitorteam_Score { get; init; }
@@ -31,7 +31,7 @@
         public string Ps_Score { get; init; }
     }
 
-    public class Time
+    public record Time
     {
         public string Status { get; init; }
         public Starting_At Starting_At { get; init; }
@@ -42,7 +42,7 @@
         public double? Injury_Time { get; init; }
     }
 
-    public class Starting_At
+    public record Starting_At
     {
         public string Date_Time { get; init; }
         public string Date { get; init; }
@@ -52,19 +52,19 @@
     }
 
 
-    public class Standings
+    public record Standings
     {
-        public int? localteam_position { get; set; }
-        public int? visitorteam_position { get; set; }
+        public int? localteam_position { get; init; }
+        public int? visitorteam_position { get; init; }
     }
 
 
-    public class Team
+    public record Team
     {
-        public TeamData data { get; set; }
+        public TeamData data { get; init; }
     }
 
-    public class TeamData
+    public record TeamData
     {
         public double? Id { get; init; }
         public string Name { get; init; }
@@ -79,21 +79,21 @@
     }
 
 
-    public class Venue
+    public record Venue
     {
-        public VenuData data { get; set; }
+        public VenuData data { get; init; }
     }
 
-    public class VenuData
+    public record VenuData
     {
-        public int? id { get; set; }
-        public string name { get; set; }
-        public string surface { get; set; }
-        public string address { get; set; }
-        public string city { get; set; }
-        public int? capacity { get; set; }
-        public string image_path { get; set; }
-        public string coordinates { get; set; }
+        public int? id { get; init; }
+        public string name { get; init; }
+        public string surface { get; init; }
+        public string address { get; init; }
+        public string city { get; init; }
+        public int? capacity { get; init; }
+        public string image_path { get; init; }
+        public string coordinates { get; init; }
     }
 
 

@@ -1,18 +1,18 @@
 ﻿namespace MyResumeSiteBackEnd.Models.ApiResponses
 {
-    public class Leagues
+    public record Leagues
     {
-        public LeaguesData[] data { get; set; }
+        public LeaguesData[] data { get; init; }
     }
 
-    public class LeaguesData
+    public record LeaguesData
     {
-        public int? id { get; set; }
-        public bool active { get; set; }
-        public int? country_id { get; set; }
-        public string logo_path { get; set; }
-        public string name { get; set; }
-        public bool? is_cup { get; set; }
-        public int? current_season_id { get; set; }
+        public int? id { get; init; }
+        public bool active { get; init; }
+        public int? country_id { get; init; }
+        public string logo_path { get; init; }
+        public string name { get; init; }
+        public bool? is_cup { get; init; }
+        public int? current_season_id { get; init; }
     }
 }

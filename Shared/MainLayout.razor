@@ -1,18 +1,40 @@
 ﻿@inherits LayoutComponentBase
+@inject IJSRuntime _jsRunTime
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <div class="main">
-        <div class="top-row px-4 auth">
-            <LoginDisplay />
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+<CascadingValue Value="_utilityService">
+    <div class="page">
+        <div class="sidebar">
+            <NavMenu />
         </div>
 
-        <div class="content px-4">
-            @Body
+        <div class="main">
+            <div class="top-row px-4 auth">
+                <LoginDisplay />
+                <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+            </div>
+
+            <div class="content px-4">
+                @Body
+            </div>
         </div>
     </div>
-</div>
+</CascadingValue>
+
+
+@code{
+    UtilityService _utilityService;
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _utilityService = new UtilityService(_jsRunTime);
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        if (firstRender)
+        {
+           _ = _utilityService.SignalRService.ConnectIfNecessary();
+        }
+    }
+}

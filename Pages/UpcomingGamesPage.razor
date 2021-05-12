@@ -1,0 +1,122 @@
+﻿@page "/upcominggames"
+@implements IDisposable
+@using MyResumeSiteBackEnd.BackgroundWorkers
+<h3>UpcomingGamesPage</h3>
+@if (_isLoading)
+{
+    <p>...loading</p>
+}
+else
+{
+    if (!_shedule?.Any() ?? true)
+    {
+        <p>No games found</p>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var kvp in _shedule)
+            {
+                if (kvp.Value.Any())
+                {
+            <div class="col-md-4">
+                <div class="text-center mx-auto">
+                    <img src="@kvp.Key.logo_path" style="max-height: 70px"  />
+                </div>
+                <h5 class="text-center">@kvp.Key.name</h5>
+                <hr />
+                <div style="max-height: 350px; overflow:auto">
+                    @foreach (var fixture in kvp.Value)
+                    {
+                        DateTime matchTime = DateTime.Parse(fixture.time.Starting_At.Date_Time);
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <p class="text-center small">
+                                    @fixture.localTeam.data.Name <img src="@fixture.localTeam.data.Logo_Path" style="max-height:30px" /> vs <img src="@fixture.visitorTeam.data.Logo_Path" style="max-height:20px" /> @fixture.visitorTeam.data.Name
+                                    <br />
+                                    <span class="small text-center">@fixture.venue.data.name</span>
+                                    <br />
+                                    <span class="small text-center">@matchTime.ToLongDateString()</span>
+                                    <br />
+                                    <span class="small text-center">@matchTime.ToLongTimeString() UTC | @((matchTime+ TimeSpan.FromHours(2)).ToLongTimeString())</span>
+                                </p>
+                            </div>
+                        </div>
+                        
+                    }
+                </div>
+             
+            </div>
+                }
+            }
+        </div>
+    }
+}
+
+
+
+@code {
+
+    [CascadingParameter]
+    public UtilityService UtilityService { get; set; }
+
+    bool _isLoading = false;
+
+    Dictionary<LeaguesData, List<FixturesData>> _shedule = new Dictionary<LeaguesData, List<FixturesData>>();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _ = SetUpShecdule();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if (firstRender)
+        {
+            await UtilityService.SignalRService.ConnectIfNecessary();
+            UtilityService.SignalRService.FixturesUpdates -= OnScheduleUpdated;
+            UtilityService.SignalRService.FixturesUpdates += OnScheduleUpdated;
+        }
+    }
+
+    void OnScheduleUpdated(object sender, EventArgs eventArgs)
+    {
+        _ = SetUpShecdule();
+    }
+
+    async Task SetIsLoading(bool isLoading)
+    {
+        _isLoading = isLoading;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SetUpShecdule()
+    {
+        await SetIsLoading(true);
+        _shedule = new Dictionary<LeaguesData, List<FixturesData>>();
+        if (BackgroundWorkerMatchScheduler.Fixtures?.data?.Any() ?? false)
+        {
+            foreach (var league in BackgroundWorkerMatchScheduler.Leagues.data)
+            {
+                _shedule.Add(league, new List<FixturesData>());
+            }
+
+            foreach (var key in _shedule.Keys)
+            {
+                _shedule[key] = BackgroundWorkerMatchScheduler.Fixtures.data
+                    .Where(f => f.league_id == key.id)
+                    ?.OrderBy(f => DateTime.Parse(f.time.Starting_At.Date_Time))
+                    ?.ToList() ?? new List<FixturesData>();
+            }
+        }
+        await SetIsLoading(false);
+
+    }
+
+    public void Dispose()
+    {
+        UtilityService.SignalRService.FixturesUpdates -= OnScheduleUpdated;
+    }
+}

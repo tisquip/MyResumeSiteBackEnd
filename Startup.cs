@@ -105,7 +105,7 @@ namespace MyResumeSiteBackEnd
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapHub<MessageHub>(Variables.MessageHubUrlEndPoint);
+                endpoints.MapHub<MessageHub>(Variables.MessageHubUrlEndPointWithPreSlash);
                 endpoints.MapControllers();
                 endpoints.MapBlazorHub();
                 endpoints.MapFallbackToPage("/_Host");

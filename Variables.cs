@@ -15,9 +15,11 @@ namespace MyResumeSiteBackEnd
             return $"{(useApmersand ? "&" : "?")}api_token={apiKey}";
         }
 
-        public static string MessageHubUrlEndPoint = "/messages";
+        public static string MessageHubUrlEndPointWithPreSlash => "/messages";
         public static string SignalRMethodNameFixturesUpdated => "RealTimeFixturesChanged";
         public static string SignalRMethodNameLiveMatch => "RealTimeLiveMatch";
+        public static string AppUrl => "https://localhost:44371/";
+
 
     }
 }
