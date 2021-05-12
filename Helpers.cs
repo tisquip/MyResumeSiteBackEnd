@@ -1,18 +1,16 @@
 ﻿
+using System;
+using System.Net.Http;
+
 using Microsoft.Extensions.Configuration;
 
 namespace MyResumeSiteBackEnd
 {
     public static class Helpers
     {
-        public static (string ApiKey, int TeamId, int LeagueId) GetApiVariable(IConfiguration configuration)
+        public static string ApiKeyGetApiVariables(IConfiguration configuration)
         {
-            (string ApiKey, int TeamId, int LeagueId) vtr = ("", 0, 0);
-            vtr.ApiKey = configuration.GetValue<string>("ApiFootballKey");
-            vtr.TeamId = configuration.GetValue<int>("TeamId");
-            vtr.LeagueId = configuration.GetValue<int>("LeagueId");
-
-            return vtr;
+            return configuration.GetValue<string>("SportsMonkKey");
         }
     }
 }

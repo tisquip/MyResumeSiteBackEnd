@@ -1,4 +1,6 @@
 
+using System.Net.Http;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Hosting;
@@ -9,18 +11,34 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using MyResumeSiteBackEnd.Areas.Identity;
+using MyResumeSiteBackEnd.BackgroundWorkers;
 using MyResumeSiteBackEnd.Data;
 
+using Polly.Extensions.Http;
+
+using Polly;
+
 using Serilog;
+using System;
 
 namespace MyResumeSiteBackEnd
 {
     public class Startup
     {
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
             Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(Configuration).CreateLogger();
+        }
+
+        static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+        {
+            return HttpPolicyExtensions
+                .HandleTransientHttpError()
+                .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.NotFound)
+                .WaitAndRetryAsync(6, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2,
+                                                                            retryAttempt)));
         }
 
         public IConfiguration Configuration { get; }
@@ -38,6 +56,15 @@ namespace MyResumeSiteBackEnd
             services.AddServerSideBlazor();
             services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<IdentityUser>>();
             services.AddDatabaseDeveloperPageExceptionFilter();
+
+            services.AddHttpClient<BackgroundWorkerMatchScheduler>()
+                .AddPolicyHandler(GetRetryPolicy());
+
+            services.AddHttpClient<BackgroundMatchBroadcaster>()
+              .AddPolicyHandler(GetRetryPolicy());
+
+            services.AddHostedService<BackgroundWorkerMatchScheduler>();
+            services.AddHostedService<BackgroundMatchBroadcaster>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
