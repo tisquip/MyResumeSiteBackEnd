@@ -46,7 +46,7 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
                 isProcessing = true;
                 try
                 {
-                    string urlFixturesNow = $"https://soccer.sportmonks.com/api/v2.0/livescores/now?leagues=&include=localTeam,visitorTeam,substitutions,goals,cards,events,corners,stats{Variables.GetApiKeyUrlFormatted(_apiKey, true)}";
+                    string urlFixturesNow = $"https://soccer.sportmonks.com/api/v2.0/livescores/now?leagues=&include=localTeam,visitorTeam,substitutions,goals,cards,events,corners,stats,league{Variables.GetApiKeyUrlFormatted(_apiKey, true)}";
 
                     string urlFixturesOfTheDay = $"https://soccer.sportmonks.com/api/v2.0/livescores{Variables.GetApiKeyUrlFormatted(_apiKey)}";
 

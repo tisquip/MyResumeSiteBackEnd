@@ -20,7 +20,7 @@ namespace MyResumeSiteBackEnd.Models.ApiResponses
         public Team localTeam { get; init; }
         public Team visitorTeam { get; init; }
         public Venue venue { get; init; }
-
+        public League league { get; set; }
 
         public Substitutions substitutions { get; init; }
         public Goals goals { get; init; }
@@ -255,7 +255,7 @@ namespace MyResumeSiteBackEnd.Models.ApiResponses
     {
         public int? total { get; set; }
         public int? accurate { get; set; }
-        public float percentage { get; set; }
+        public float? percentage { get; set; }
     }
 
     public class Attacks

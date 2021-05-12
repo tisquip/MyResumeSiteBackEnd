@@ -15,4 +15,10 @@
         public bool? is_cup { get; init; }
         public int? current_season_id { get; init; }
     }
+
+    public record League
+    {
+        public LeaguesData data { get; set; }
+    }
+
 }

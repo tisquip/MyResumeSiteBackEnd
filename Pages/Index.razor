@@ -11,27 +11,39 @@ else
 <div class="row">
     @foreach (var fixtureData in _fixtures.data)
     {
+    <div class="col-md-4">
         <div class="card">
             <div class="card-body">
                 <div class="row">
                     <div class="col-sm-6">
-                        <div>
+                        <div class="text-center">
                             <img src="@fixtureData.localTeam.data.Logo_Path" style="max-height: 30px" />
                         </div>
-                        <p>@fixtureData.localTeam.data.Name</p>
-                        <p>@fixtureData.scores.Localteam_Score</p>
+                        <p class="text-center mb-0">@fixtureData.localTeam.data.Name</p>
+                        <h4 class="text-center mb-0 font-weight-bolder">@fixtureData.scores.Localteam_Score</h4>
                     </div>
                     <div class="col-sm-6">
-                        <div>
+                        <div  class="text-center">
                             <img src="@fixtureData.visitorTeam.data.Logo_Path" style="max-height: 30px" />
                         </div>
-                        <p>@fixtureData.visitorTeam.data.Name</p>
-                        <p>@fixtureData.scores.Visitorteam_Score</p>
+                        <p class="text-center mb-0">@fixtureData.visitorTeam.data.Name</p>
+                        <h4 class="text-center mb-0 font-weight-bolder">@fixtureData.scores.Visitorteam_Score</h4>
                     </div>
                 </div>
-                <p>elaplsed: @fixtureData.time.Minute</p>
+                @if (fixtureData.time.Minute.HasValue)
+                {
+                    <p class="small text-center"> Elapsed: @fixtureData.time.Minute</p>
+                }
+                else
+                {
+                    DateTime time = DateTime.Parse(fixtureData.time.Starting_At.Date_Time);
+                    <p class="small text-center">Starting at: @time.ToLongTimeString() UTC | @((time.AddHours(2)).ToLongTimeString())</p>
+                }
+
             </div>
         </div>
+    </div>
+      
     }
 </div>
   
