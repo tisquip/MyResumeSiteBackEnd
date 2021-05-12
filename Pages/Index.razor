@@ -1,6 +1,78 @@
 ﻿@page "/"
+@implements IDisposable
 
-<h1>Hello, world!</h1>
+<h1>Live Games</h1>
+@if (_fixtures == null)
+{
+    <p>No Live Games</p>
+}
+else
+{
+<div class="row">
+    @foreach (var fixtureData in _fixtures.data)
+    {
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div>
+                            <img src="@fixtureData.localTeam.data.Logo_Path" style="max-height: 30px" />
+                        </div>
+                        <p>@fixtureData.localTeam.data.Name</p>
+                        <p>@fixtureData.scores.Localteam_Score</p>
+                    </div>
+                    <div class="col-sm-6">
+                        <div>
+                            <img src="@fixtureData.visitorTeam.data.Logo_Path" style="max-height: 30px" />
+                        </div>
+                        <p>@fixtureData.visitorTeam.data.Name</p>
+                        <p>@fixtureData.scores.Visitorteam_Score</p>
+                    </div>
+                </div>
+                <p>elaplsed: @fixtureData.time.Minute</p>
+            </div>
+        </div>
+    }
+</div>
+  
+}
 
-Welcome to your new app.
 
+
+@code{
+    [CascadingParameter]
+    public UtilityService UtilityService { get; set; }
+
+    Fixtures _fixtures;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        if (firstRender)
+        {
+            UtilityService.SignalRService.LiveMatchUpdate -= OnFixtureRecieved;
+            UtilityService.SignalRService.LiveMatchUpdate += OnFixtureRecieved;
+            _ = UtilityService.SignalRService.ConnectIfNecessary();
+
+        }
+    }
+
+    async void OnFixtureRecieved(object sender, Fixtures fixture)
+    {
+        try
+        {
+            _fixtures = fixture;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            await UtilityService.NotificationService.Notify(ex.Message, false);
+        }
+    }
+
+    public void Dispose()
+    {
+        UtilityService.SignalRService.LiveMatchUpdate -= OnFixtureRecieved;
+    }
+
+}

@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.JSInterop;
 
+using MyResumeSiteBackEnd.Models.ApiResponses;
+
 namespace MyResumeSiteBackEnd.Services
 {
     public class SignalRService
@@ -15,13 +17,33 @@ namespace MyResumeSiteBackEnd.Services
         public HubConnection HubConnection { get; private set; }
 
         public event EventHandler FixturesUpdates;
-
         protected virtual void OnFixturesUpdates()
         {
             EventHandler handler = FixturesUpdates;
             if (handler != null)
             {
                 handler(this, EventArgs.Empty);
+            }
+        }
+
+        public event EventHandler<Fixtures> LiveMatchUpdate;
+
+        protected virtual void OnLiveMatchUpdate(string fixturesJson)
+        {
+            try
+            {
+                if (LiveMatchUpdate != null)
+                {
+                    Fixtures vts = Newtonsoft.Json.JsonConvert.DeserializeObject<Fixtures>(fixturesJson);
+                    if (vts != null)
+                    {
+                        LiveMatchUpdate.Invoke(this, vts);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ;
             }
         }
 
@@ -51,6 +73,12 @@ namespace MyResumeSiteBackEnd.Services
                     {
                         OnFixturesUpdates();
                     });
+
+                    HubConnection.On<string>(Variables.SignalRMethodNameLiveMatch, (fixturesJson) =>
+                    {
+                        OnLiveMatchUpdate(fixturesJson);
+                    });
+
                     await HubConnection.StartAsync();
                 }
                 catch (Exception ex)
