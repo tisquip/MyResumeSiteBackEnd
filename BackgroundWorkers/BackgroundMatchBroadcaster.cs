@@ -53,6 +53,7 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
                         Last10Exceptions.RemoveAt(count - 1);
                     }
                 }
+                isProcessing = false;
             }
         }
 

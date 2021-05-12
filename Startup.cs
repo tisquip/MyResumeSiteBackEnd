@@ -20,11 +20,13 @@ using Polly;
 
 using Serilog;
 using System;
+using MyResumeSiteBackEnd.Hubs;
 
 namespace MyResumeSiteBackEnd
 {
     public class Startup
     {
+        string _allowAllCorsName = "AllowAll";
 
         public Startup(IConfiguration configuration)
         {
@@ -65,8 +67,18 @@ namespace MyResumeSiteBackEnd
 
             services.AddHostedService<BackgroundWorkerMatchScheduler>();
             services.AddHostedService<BackgroundMatchBroadcaster>();
-        }
 
+            services.AddCors(buider =>
+            {
+                buider.AddPolicy(_allowAllCorsName, config =>
+                {
+                    config.AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowAnyOrigin()
+                    .Build();
+                });
+            });
+        }
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
@@ -81,8 +93,9 @@ namespace MyResumeSiteBackEnd
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
-
+            
             app.UseHttpsRedirection();
+            app.UseCors(_allowAllCorsName);
             app.UseStaticFiles();
 
             app.UseRouting();
@@ -92,6 +105,7 @@ namespace MyResumeSiteBackEnd
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapHub<MessageHub>(Variables.MessageHubUrlEndPoint);
                 endpoints.MapControllers();
                 endpoints.MapBlazorHub();
                 endpoints.MapFallbackToPage("/_Host");
