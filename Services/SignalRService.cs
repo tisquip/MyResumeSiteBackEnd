@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.JSInterop;
 
-using MyResumeSiteBackEnd.Models.ApiResponses;
+using MyResumeSiteModels;
+using MyResumeSiteModels.ApiResponses;
 
 namespace MyResumeSiteBackEnd.Services
 {
@@ -60,21 +61,21 @@ namespace MyResumeSiteBackEnd.Services
                 isAttemptingToConnect = true;
                 try
                 {
-                    string hubEndpoint = Variables.MessageHubUrlEndPointWithPreSlash;
+                    string hubEndpoint = VariablesCore.MessageHubUrlEndPointWithPreSlash;
                     hubEndpoint = hubEndpoint.Replace("/", "");
-                    string url = $"{Variables.AppUrl}{hubEndpoint}";
+                    string url = $"{VariablesCore.ServerUrl}{hubEndpoint}";
                     
                     HubConnection = new HubConnectionBuilder()
                         .WithUrl(url)
                         .WithAutomaticReconnect()
                         .Build();
 
-                    HubConnection.On(Variables.SignalRMethodNameFixturesUpdated, () =>
+                    HubConnection.On(VariablesCore.SignalRMethodNameFixturesUpdated, () =>
                     {
                         OnFixturesUpdates();
                     });
 
-                    HubConnection.On<string>(Variables.SignalRMethodNameLiveMatch, (fixturesJson) =>
+                    HubConnection.On<string>(VariablesCore.SignalRMethodNameLiveMatch, (fixturesJson) =>
                     {
                         OnLiveMatchUpdate(fixturesJson);
                     });

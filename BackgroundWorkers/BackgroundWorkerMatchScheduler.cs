@@ -14,7 +14,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using MyResumeSiteBackEnd.Hubs;
-using MyResumeSiteBackEnd.Models.ApiResponses;
+
+using MyResumeSiteModels;
+using MyResumeSiteModels.ApiResponses;
 
 namespace MyResumeSiteBackEnd.BackgroundWorkers
 {
@@ -58,7 +60,7 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
                     string url = $"{Variables.SportsMonkApiBaseUrl}fixtures/between/{startDate.ToStringSportsMonkFormatting()}/{endDate.ToStringSportsMonkFormatting()}{Variables.GetApiKeyUrlFormatted(_apiKey)}&include=localTeam,visitorTeam,venue";
 
                     Fixtures = await _httpClient.GetFromJsonAsync<Fixtures>(url);
-                    await _hubContext.Clients.All.SendAsync(Variables.SignalRMethodNameFixturesUpdated);
+                    await _hubContext.Clients.All.SendAsync(VariablesCore.SignalRMethodNameFixturesUpdated);
                 }
                 catch (Exception ex)
                 {

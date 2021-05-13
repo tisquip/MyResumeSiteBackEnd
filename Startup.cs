@@ -21,6 +21,7 @@ using Polly;
 using Serilog;
 using System;
 using MyResumeSiteBackEnd.Hubs;
+using MyResumeSiteModels;
 
 namespace MyResumeSiteBackEnd
 {
@@ -52,10 +53,14 @@ namespace MyResumeSiteBackEnd
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(
                     Configuration.GetConnectionString("DefaultConnection")));
+
             services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
                 .AddEntityFrameworkStores<ApplicationDbContext>();
+
             services.AddRazorPages();
+
             services.AddServerSideBlazor();
+
             services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<IdentityUser>>();
             services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -65,8 +70,14 @@ namespace MyResumeSiteBackEnd
             services.AddHttpClient<BackgroundMatchBroadcaster>()
               .AddPolicyHandler(GetRetryPolicy());
 
+            services.AddHttpClient<BackgroundWorkerStandings>()
+             .AddPolicyHandler(GetRetryPolicy());
+
+
             services.AddHostedService<BackgroundWorkerMatchScheduler>();
             services.AddHostedService<BackgroundMatchBroadcaster>();
+            services.AddHostedService<BackgroundWorkerStandings>();
+            
 
             services.AddCors(buider =>
             {
@@ -105,7 +116,7 @@ namespace MyResumeSiteBackEnd
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapHub<MessageHub>(Variables.MessageHubUrlEndPointWithPreSlash);
+                endpoints.MapHub<MessageHub>(VariablesCore.MessageHubUrlEndPointWithPreSlash);
                 endpoints.MapControllers();
                 endpoints.MapBlazorHub();
                 endpoints.MapFallbackToPage("/_Host");

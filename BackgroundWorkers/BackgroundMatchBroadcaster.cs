@@ -12,12 +12,15 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using MyResumeSiteBackEnd.Hubs;
-using MyResumeSiteBackEnd.Models.ApiResponses;
+
+using MyResumeSiteModels;
+using MyResumeSiteModels.ApiResponses;
 
 namespace MyResumeSiteBackEnd.BackgroundWorkers
 {
     public class BackgroundMatchBroadcaster : IHostedService
     {
+        public static Fixtures FixturesLive;
         public static List<Exception> Last10Exceptions = new List<Exception>();
         Timer _timer;
         private readonly ILogger<BackgroundMatchBroadcaster> _logger;
@@ -50,17 +53,17 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
 
                     string urlFixturesOfTheDay = $"https://soccer.sportmonks.com/api/v2.0/livescores{Variables.GetApiKeyUrlFormatted(_apiKey)}";
 
-                    Fixtures fixtures = await _httpClient.GetFromJsonAsync<Fixtures>(urlFixturesNow);
-                    if (!fixtures?.data?.Any() ?? true)
+                    FixturesLive = await _httpClient.GetFromJsonAsync<Fixtures>(urlFixturesNow);
+                    if (!FixturesLive?.data?.Any() ?? true)
                     {
-                        fixtures = await _httpClient.GetFromJsonAsync<Fixtures>(urlFixturesOfTheDay);
-                        SetTimer(fixtures);
+                        FixturesLive = await _httpClient.GetFromJsonAsync<Fixtures>(urlFixturesOfTheDay);
+                        SetTimer(FixturesLive);
                     }
                     else
                     {
                         SetTimerToBroadCastTime();
-                        string fixturesJsonString = Newtonsoft.Json.JsonConvert.SerializeObject(fixtures);
-                        await _hubContext.Clients.All.SendAsync(Variables.SignalRMethodNameLiveMatch, fixturesJsonString);
+                        string fixturesJsonString = Newtonsoft.Json.JsonConvert.SerializeObject(FixturesLive);
+                        await _hubContext.Clients.All.SendAsync(VariablesCore.SignalRMethodNameLiveMatch, fixturesJsonString);
                     }
                     
                 }
@@ -129,6 +132,8 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
                         }
                     }
                 }
+
+
                 _timer.Change(TimeSpan.FromSeconds(15), amountOfTimeBeforeNextCall);
             }
         }

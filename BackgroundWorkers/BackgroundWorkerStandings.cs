@@ -10,18 +10,21 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MyResumeSiteBackEnd.Hubs;
 
-using MyResumeSiteBackEnd.Models.ApiResponses;
+using MyResumeSiteModels;
+using MyResumeSiteModels.ApiResponses;
 
 namespace MyResumeSiteBackEnd.BackgroundWorkers
 {
     public class BackgroundWorkerStandings : IHostedService
     {
         public static List<Exception> Last10Exceptions = new List<Exception>();
-        Timer _timer;
+        Timer _timerMain;
+        public static List<StandingsApiResponseWithLeagueData> StandingsApiResponsesWithLeague = new List<StandingsApiResponseWithLeagueData>();
         private readonly ILogger<BackgroundWorkerStandings> _logger;
         private readonly HttpClient _httpClient;
         private readonly IHubContext<MessageHub> _hubContext;
         string _apiKey = "";
+
 
         public BackgroundWorkerStandings(ILogger<BackgroundWorkerStandings> logger, IConfiguration configuration, HttpClient httpClient, IHubContext<MessageHub> hubContext)
         {
@@ -32,36 +35,100 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
         }
         public Task StartAsync(CancellationToken cancellationToken)
         {
+            _timerMain = new Timer(Process, cancellationToken, TimeSpan.FromMinutes(1), TimeSpan.FromHours(1));
+
             return Task.CompletedTask;
         }
 
         bool isProcessing = false;
         async void Process(object state)
         {
-            if (!isProcessing)
+            if (BackgroundWorkerMatchScheduler.Leagues?.data?.Any() ?? false)
             {
-                isProcessing = true;
-                try
+                if (!isProcessing)
                 {
-
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error occured {@ex}", ex);
-
-                    Last10Exceptions.Insert(0, ex);
-                    int count = Last10Exceptions.Count;
-                    if (count > 10)
+                    isProcessing = true;
+                    try
                     {
-                        Last10Exceptions.RemoveAt(count - 1);
+                        StandingsApiResponsesWithLeague = new List<StandingsApiResponseWithLeagueData>();
+                        string urlLeaguesBase = "https://soccer.sportmonks.com/api/v2.0/standings/season/";
+                        foreach (var league in BackgroundWorkerMatchScheduler.Leagues.data)
+                        {
+                            try
+                            {
+
+                                if (league.is_cup.Value)
+                                {
+                                    continue;
+                                }
+
+                                string urlToUse = $"{urlLeaguesBase}{league.current_season_id}{Variables.GetApiKeyUrlFormatted(_apiKey)}";
+
+                                var response = await _httpClient.GetAsync(urlToUse);
+                                if (response.IsSuccessStatusCode)
+                                {
+                                    string content = await response.Content.ReadAsStringAsync();
+                                    StandingsApiResponse standingsApiResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<StandingsApiResponse>(content);
+
+                                    StandingsApiResponsesWithLeague
+                                        .Add(new StandingsApiResponseWithLeagueData() 
+                                        { LeagueData = league, StandingsApiResponse = standingsApiResponse });
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                HandleError(ex);
+                            }
+                        }
+
                     }
+                    catch (Exception ex)
+                    {
+                        HandleError(ex);
+                    }
+
+
+                    if (StandingsApiResponsesWithLeague?.Any() ?? false)
+                    {
+                        var standingsWithoutData = StandingsApiResponsesWithLeague.Where(s => !s.StandingsApiResponse?.data?.Any() ?? true)?.ToList() ?? new List<StandingsApiResponseWithLeagueData>();
+
+                        if (standingsWithoutData?.Any() ?? false)
+                        {
+                            foreach (var itemToRemove in standingsWithoutData)
+                            {
+                                StandingsApiResponsesWithLeague.Remove(itemToRemove);
+                            }
+                        }
+
+                        if (StandingsApiResponsesWithLeague.Any())
+                        {
+                            await _hubContext.Clients.All.SendAsync(VariablesCore.SignalRMethodNameStandings);
+                        }
+                    }
+
+                    isProcessing = false;
                 }
-                isProcessing = false;
+            }
+           
+        }
+
+
+
+        private void HandleError(Exception ex)
+        {
+            _logger.LogError(ex, "Error occured {@ex}", ex);
+
+            Last10Exceptions.Insert(0, ex);
+            int count = Last10Exceptions.Count;
+            if (count > 10)
+            {
+                Last10Exceptions.RemoveAt(count - 1);
             }
         }
+
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            _timer?.Dispose();
+            _timerMain?.Dispose();
             return Task.CompletedTask;
         }
 

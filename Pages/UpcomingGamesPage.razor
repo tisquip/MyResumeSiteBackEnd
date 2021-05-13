@@ -28,13 +28,13 @@ else
                 <div style="max-height: 350px; overflow:auto">
                     @foreach (var fixture in kvp.Value)
                     {
-                        DateTime matchTime = DateTime.Parse(fixture.time.Starting_At.Date_Time);
+                        DateTime.TryParse(fixture.time.Starting_At.Date_Time, out DateTime matchTime);
                         <div class="card mb-3">
                             <div class="card-body">
                                 <p class="text-center small">
-                                    @fixture.localTeam.data.Name <img src="@fixture.localTeam.data.Logo_Path" style="max-height:30px" /> vs <img src="@fixture.visitorTeam.data.Logo_Path" style="max-height:20px" /> @fixture.visitorTeam.data.Name
+                                    @(fixture.localTeam?.data?.Name) <img src="@fixture.localTeam?.data?.Logo_Path" style="max-height:30px" /> vs <img src="@fixture.visitorTeam?.data?.Logo_Path" style="max-height:20px" /> @fixture.visitorTeam?.data?.Name
                                     <br />
-                                    <span class="small text-center">@fixture.venue.data.name</span>
+                                    <span class="small text-center">@fixture.venue?.data?.name</span>
                                     <br />
                                     <span class="small text-center">@matchTime.ToLongDateString()</span>
                                     <br />
