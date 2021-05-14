@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyResumeSiteBackEnd", "MyRe
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Models", "Models", "{4D889E95-C5B6-46CA-A023-9ED7F07A5165}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyResumeSiteModels", "..\MyResumeSiteModels\MyResumeSiteModels.csproj", "{7873CA31-265B-49DF-95B0-523BD4244740}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyResumeSiteModels", "..\MyResumeSiteModels\MyResumeSiteModels.csproj", "{7873CA31-265B-49DF-95B0-523BD4244740}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

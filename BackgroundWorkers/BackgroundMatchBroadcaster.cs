@@ -12,6 +12,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using MyResumeSiteBackEnd.Hubs;
+using MyResumeSiteBackEnd.Services;
 
 using MyResumeSiteModels;
 using MyResumeSiteModels.ApiResponses;
@@ -26,19 +27,25 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
         private readonly ILogger<BackgroundMatchBroadcaster> _logger;
         private readonly HttpClient _httpClient;
         private readonly IHubContext<MessageHub> _hubContext;
+        private readonly IEmailService _emailService;
         string _apiKey = "";
-
-        public BackgroundMatchBroadcaster(ILogger<BackgroundMatchBroadcaster> logger, IConfiguration configuration, HttpClient httpClient, IHubContext<MessageHub> hubContext)
+      
+        public BackgroundMatchBroadcaster(ILogger<BackgroundMatchBroadcaster> logger, IConfiguration configuration, HttpClient httpClient, IHubContext<MessageHub> hubContext, IEmailService emailService)
         {
             _logger = logger;
             _httpClient = httpClient;
             _hubContext = hubContext;
+            _emailService = emailService;
             _apiKey = Helpers.ApiKeyGetApiVariables(configuration);
         }
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
             SetTimer(null);
-            return Task.CompletedTask;
+            if (!VariablesCore.ServerUrl.Contains("local"))
+            {
+                await _emailService.SendEmail("tisquip6@gmail.com", "Background Service Started", $"BackgroundMatchBroadcaster started on {VariablesCore.ServerUrl}");
+            }
+          
         }
 
         bool isProcessing = false;
@@ -53,9 +60,12 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
 
                     string urlFixturesOfTheDay = $"https://soccer.sportmonks.com/api/v2.0/livescores{Variables.GetApiKeyUrlFormatted(_apiKey)}&include=localTeam,visitorTeam,league";
 
+                    AddEvent("Processing Started");
+
                     FixturesLive = await _httpClient.GetFromJsonAsync<Fixtures>(urlFixturesNow);
                     if (!FixturesLive?.data?.Any() ?? true)
                     {
+                        AddEvent("No Fixtures Found");
                         FixturesLive = await _httpClient.GetFromJsonAsync<Fixtures>(urlFixturesOfTheDay);
                         SetTimer(FixturesLive);
                     }
@@ -64,11 +74,13 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
                         SetTimerToBroadCastTime();
                         string fixturesJsonString = Newtonsoft.Json.JsonConvert.SerializeObject(FixturesLive);
                         await _hubContext.Clients.All.SendAsync(VariablesCore.SignalRMethodNameLiveMatch, fixturesJsonString);
+                        AddEvent("Match broadcast", FixturesLive);
                     }
                     
                 }
                 catch (Exception ex)
                 {
+                    AddEvent("Exception", ex);
                     _logger.LogError(ex, "Error occured {@ex}", ex);
 
                     Last10Exceptions.Insert(0, ex);
@@ -77,6 +89,13 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
                     {
                         Last10Exceptions.RemoveAt(count - 1);
                     }
+
+                    if (!VariablesCore.ServerUrl.Contains("local"))
+                    {
+                        await _emailService.SendAsyncToAdminException(ex);
+                    }
+
+                    
                 }
                 isProcessing = false;
             }
@@ -88,6 +107,7 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
             {
                 _isOnBroadcastTimer = true;
                 _timer.Change(TimeSpan.FromSeconds(15), _broadcastTimer);
+                AddEvent("SetTimerToBroadCastTime called is On Broadcast Timer", _isOnBroadcastTimer);
             }
         }
 
@@ -96,6 +116,7 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
         TimeSpan _restTimer = TimeSpan.FromHours(11);
         private void SetTimer(Fixtures fixtures)
         {
+            AddEvent("Set Timer called with Fixtures", fixtures);
             TimeSpan amountOfTimeBeforeNextCall = _broadcastTimer;
             _isOnBroadcastTimer = false;
             if (_timer == null)
@@ -133,14 +154,51 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
                     }
                 }
 
-
                 _timer.Change(TimeSpan.FromSeconds(15), amountOfTimeBeforeNextCall);
+                AddEvent("Timer Set to", amountOfTimeBeforeNextCall);
+                AddEvent("Timer Is On Broadcast Time", _isOnBroadcastTimer);
             }
         }
+
+
+        public static List<string> Last50Events = new List<string>();
+
+        void AddEvent(string evnt)
+        {
+            Last50Events.Insert(0, $"{DateTime.UtcNow}| BackgroundMatchBroadcaster | {evnt}");
+            if (Last50Events.Count > 50)
+            {
+                Last50Events.RemoveAt(Last50Events.Count - 1);
+            }
+        }
+
+        void AddEvent(string evnt, object data)
+        {
+            if (data != null)
+            {
+                try
+                {
+                    evnt += $" | Data: {Newtonsoft.Json.JsonConvert.SerializeObject(data)}";
+                }
+                catch (Exception)
+                {
+                }
+            }
+            else
+            {
+                evnt += $" | Data: was null";
+            }
+
+            AddEvent(evnt);
+        }
+
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _timer?.Dispose();
+
+            AddEvent("Stop Async Called");
+
             return Task.CompletedTask;
         }
 

@@ -1,0 +1,30 @@
+﻿@page "/events"
+<h3>EventsPage</h3>
+<h4>Exceptions</h4>
+<textarea class="form-control" rows="5">Test</textarea>
+
+<ol>
+    @foreach (var exception in Exceptions)
+    {
+        <li>
+            <textarea class="form-control" rows="5">@(Newtonsoft.Json.JsonConvert.SerializeObject(exception))</textarea>
+        </li>
+    }
+</ol>
+
+<hr />
+<h4>Events</h4>
+<ol>
+    @foreach (var eventLogged in EventsLogged)
+    {
+        <li>
+            <textarea class="form-control" rows="5">@eventLogged</textarea>
+        </li>
+    }
+</ol>
+
+@code {
+    List<Exception> Exceptions = new List<Exception>();
+    List<string> EventsLogged = MyResumeSiteBackEnd.BackgroundWorkers.BackgroundMatchBroadcaster.Last50Events;
+
+}

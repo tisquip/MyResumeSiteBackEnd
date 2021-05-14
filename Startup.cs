@@ -22,6 +22,7 @@ using Serilog;
 using System;
 using MyResumeSiteBackEnd.Hubs;
 using MyResumeSiteModels;
+using MyResumeSiteBackEnd.Services;
 
 namespace MyResumeSiteBackEnd
 {
@@ -73,6 +74,7 @@ namespace MyResumeSiteBackEnd
             services.AddHttpClient<BackgroundWorkerStandings>()
              .AddPolicyHandler(GetRetryPolicy());
 
+            services.AddSingleton<IEmailService, EmailService>();
 
             services.AddHostedService<BackgroundWorkerMatchScheduler>();
             services.AddHostedService<BackgroundMatchBroadcaster>();

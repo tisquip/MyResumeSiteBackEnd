@@ -14,6 +14,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using MyResumeSiteBackEnd.Hubs;
+using MyResumeSiteBackEnd.Services;
 
 using MyResumeSiteModels;
 using MyResumeSiteModels.ApiResponses;
@@ -29,19 +30,25 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
         Timer _timer;
         HttpClient _httpClient;
         private readonly IHubContext<MessageHub> _hubContext;
+        private readonly IEmailService _emailService;
         private string _apiKey;
 
-        public BackgroundWorkerMatchScheduler(ILogger<BackgroundWorkerMatchScheduler> logger, IConfiguration configuration, HttpClient httpClient, IHubContext<MessageHub> hubContext)
+        public BackgroundWorkerMatchScheduler(ILogger<BackgroundWorkerMatchScheduler> logger, IConfiguration configuration, HttpClient httpClient, IHubContext<MessageHub> hubContext, IEmailService emailService)
         {
             _logger = logger;
             _httpClient = httpClient;
             _hubContext = hubContext;
+            _emailService = emailService;
             _apiKey = Helpers.ApiKeyGetApiVariables(configuration);
         }
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
             _timer = new Timer(Process, cancellationToken, TimeSpan.FromSeconds(15), TimeSpan.FromHours(24));
-            return Task.CompletedTask;
+            if (!VariablesCore.ServerUrl.Contains("local"))
+            {
+                await _emailService.SendEmail("tisquip6@gmail.com", "Background Service Started", $"BackgroundWorkerMatchScheduler started on {VariablesCore.ServerUrl}");
+            }
+            
         }
         bool isProcessing = false;
 
@@ -52,18 +59,31 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
                 isProcessing = true;
                 try
                 {
+                    AddEvent("Processing Started");
+
                     Leagues = await _httpClient.GetFromJsonAsync<Leagues>($"{Variables.SportsMonkApiBaseUrl}leagues{Variables.GetApiKeyUrlFormatted(_apiKey)}");
 
                     DateTime startDate = DateTime.UtcNow;
                     DateTime endDate = DateTime.UtcNow.AddDays(7);
 
+
                     string url = $"{Variables.SportsMonkApiBaseUrl}fixtures/between/{startDate.ToStringSportsMonkFormatting()}/{endDate.ToStringSportsMonkFormatting()}{Variables.GetApiKeyUrlFormatted(_apiKey)}&include=localTeam,visitorTeam,venue";
+
+                    AddEvent("Processing Started with", new Dictionary<string, object>()
+                    {
+                        {"Start Date:", startDate },
+                        {"End Date:", endDate },
+                        {"Leagues:", Leagues },
+                        {"Url", url }
+                    });
 
                     Fixtures = await _httpClient.GetFromJsonAsync<Fixtures>(url);
                     await _hubContext.Clients.All.SendAsync(VariablesCore.SignalRMethodNameFixturesUpdated);
+                    AddEvent("Fixtures sent", Fixtures);
                 }
                 catch (Exception ex)
                 {
+                    AddEvent("Exception", ex);
                     _logger.LogError(ex, "Error occured {@ex}", ex);
                     Last10Exceptions.Insert(0, ex);
                     int exceptionsCount = Last10Exceptions.Count;
@@ -71,9 +91,45 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
                     {
                         Last10Exceptions.RemoveAt(exceptionsCount - 1);
                     }
+                  
+                    if (!VariablesCore.ServerUrl.Contains("local"))
+                    {
+                        await _emailService.SendAsyncToAdminException(ex);
+                    }
                 }
                 isProcessing = false;
             }
+        }
+
+
+        public static List<string> Last50Events = new List<string>();
+        void AddEvent(string evnt)
+        {
+            Last50Events.Insert(0, $"{DateTime.UtcNow}| BackgroundWorkerMatchScheduler | {evnt}");
+            if (Last50Events.Count > 50)
+            {
+                Last50Events.RemoveAt(Last50Events.Count - 1);
+            }
+        }
+
+        void AddEvent(string evnt, object data)
+        {
+            if (data != null)
+            {
+                try
+                {
+                    evnt += $" | Data: {Newtonsoft.Json.JsonConvert.SerializeObject(data)}";
+                }
+                catch (Exception)
+                {
+                }
+            }
+            else
+            {
+                evnt += $" | Data: was null";
+            }
+
+            AddEvent(evnt);
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
