@@ -1,30 +1,72 @@
 ﻿@page "/events"
-<h3>EventsPage</h3>
-<h4>Exceptions</h4>
-<textarea class="form-control" rows="5">Test</textarea>
+@using MyResumeSiteBackEnd.BackgroundWorkers
+@inject IJSRuntime jsRunTime
 
-<ol>
-    @foreach (var exception in Exceptions)
-    {
-        <li>
-            <textarea class="form-control" rows="5">@(Newtonsoft.Json.JsonConvert.SerializeObject(exception))</textarea>
-        </li>
-    }
-</ol>
+<h3>EventsPage</h3>
+<button @onclick="Test">Test</button>
+<select class="form-control" @onchange="async(c) => await ChangedSelection(c.Value.ToString())">
+    <option value="BackgroundMatchBroadcaster">BackgroundMatchBroadcaster</option>
+    <option value="BackgroundWorkerMatchScheduler">BackgroundWorkerMatchScheduler</option>
+    <option value="BackgroundWorkerStandings">BackgroundWorkerStandings</option>
+</select>
+<h4>Exceptions</h4>
+@if (Exceptions != null)
+{
+    <ol>
+        @foreach (var exception in Exceptions)
+        {
+            <li>
+                <textarea class="form-control" rows="5">@(Newtonsoft.Json.JsonConvert.SerializeObject(exception))</textarea>
+                <br />
+            </li>
+        }
+    </ol>
+}
+
 
 <hr />
 <h4>Events</h4>
-<ol>
-    @foreach (var eventLogged in EventsLogged)
-    {
-        <li>
-            <textarea class="form-control" rows="5">@eventLogged</textarea>
-        </li>
-    }
-</ol>
+@if (EventsLogged != null)
+{
+    <ol>
+        @foreach (var eventLogged in EventsLogged)
+        {
+            <li>
+                <textarea class="form-control" rows="5">@eventLogged</textarea>
+                <br />
+            </li>
+        }
+    </ol>
+}
+
 
 @code {
-    List<Exception> Exceptions = new List<Exception>();
-    List<string> EventsLogged = MyResumeSiteBackEnd.BackgroundWorkers.BackgroundMatchBroadcaster.Last50Events;
+    List<Exception> Exceptions = BackgroundMatchBroadcaster.Last10Exceptions;
+    List<string> EventsLogged = BackgroundMatchBroadcaster.Last50Events;
+
+    async Task ChangedSelection(string value)
+    {
+        await jsRunTime.InvokeVoidAsync("console.log", value);
+        if (value == "BackgroundMatchBroadcaster")
+        {
+            Exceptions = BackgroundMatchBroadcaster.Last10Exceptions;
+            EventsLogged = BackgroundMatchBroadcaster.Last50Events;
+        }
+        else if (value == "BackgroundWorkerMatchScheduler")
+        {
+            Exceptions = BackgroundWorkerMatchScheduler.Last10Exceptions;
+            EventsLogged = BackgroundWorkerMatchScheduler.Last50Events;
+        }
+        else if (value == "BackgroundWorkerStandings")
+        {
+            Exceptions = BackgroundWorkerStandings.Last10Exceptions;
+            EventsLogged = BackgroundWorkerStandings.Last50Events;
+        }
+    }
+
+    async Task Test()
+    {
+        await jsRunTime.InvokeVoidAsync("console.log", "test");
+    }
 
 }
