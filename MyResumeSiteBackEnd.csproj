@@ -32,8 +32,4 @@
     <Folder Include="Pages\Components\" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\MyResumeSiteModels\MyResumeSiteModels.csproj" />
-  </ItemGroup>
-
 </Project>
