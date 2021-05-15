@@ -1,18 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Humanizer.Localisation;
 
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
+using MyResumeSiteBackEnd.Exceptions;
 using MyResumeSiteBackEnd.Hubs;
 using MyResumeSiteBackEnd.Services;
 
@@ -83,24 +81,29 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
                 }
                 catch (Exception ex)
                 {
-                    AddEvent("Exception", ex);
-                    _logger.LogError(ex, "Error occured {@ex}", ex);
-                    Last10Exceptions.Insert(0, ex);
-                    int exceptionsCount = Last10Exceptions.Count;
-                    if (exceptionsCount > 10)
-                    {
-                        Last10Exceptions.RemoveAt(exceptionsCount - 1);
-                    }
-                  
-                    if (!VariablesCore.ServerUrl.Contains("local"))
-                    {
-                        await _emailService.SendAsyncToAdminException(ex);
-                    }
+                    await HandleException(ex);
                 }
                 isProcessing = false;
             }
         }
 
+        private async Task HandleException(Exception ex)
+        {
+            if (!VariablesCore.ServerUrl.Contains("local"))
+            {
+                await _emailService.SendAsyncToAdminException(ex);
+            }
+            AddEvent("Exception", ex);
+            _logger.LogError(ex, "Error occured {@ex}", ex);
+            Last10Exceptions.Insert(0, ex);
+            int exceptionsCount = Last10Exceptions.Count;
+            if (exceptionsCount > 10)
+            {
+                Last10Exceptions.RemoveAt(exceptionsCount - 1);
+            }
+
+            
+        }
 
         public static List<string> Last50Events = new List<string>();
         void AddEvent(string evnt)
@@ -132,10 +135,11 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
             AddEvent(evnt);
         }
 
-        public Task StopAsync(CancellationToken cancellationToken)
+        public async Task StopAsync(CancellationToken cancellationToken)
         {
+            await HandleException(new BackgroundWorkerStoppedException(typeof(BackgroundWorkerMatchScheduler)));
+
             _timer?.Dispose();
-            return Task.CompletedTask;
         }
     }
 }

@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+
+using MyResumeSiteBackEnd.Exceptions;
 using MyResumeSiteBackEnd.Hubs;
 using MyResumeSiteBackEnd.Services;
 
@@ -83,14 +85,14 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
                             }
                             catch (Exception ex)
                             {
-                                await HandleError(ex);
+                                await HandleException(ex);
                             }
                         }
 
                     }
                     catch (Exception ex)
                     {
-                       await HandleError(ex);
+                       await HandleException(ex);
                     }
 
 
@@ -154,8 +156,12 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
             AddEvent(evnt);
         }
 
-        async Task HandleError(Exception ex)
+        async Task HandleException(Exception ex)
         {
+            if (!VariablesCore.ServerUrl.Contains("local"))
+            {
+                await _emailService.SendAsyncToAdminException(ex);
+            }
             _logger.LogError(ex, "Error occured {@ex}", ex);
 
             Last10Exceptions.Insert(0, ex);
@@ -166,17 +172,14 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
             }
 
             AddEvent("Exception", ex);
-            if (!VariablesCore.ServerUrl.Contains("local"))
-            {
-                await _emailService.SendAsyncToAdminException(ex);
-            }
+            
             
         }
 
-        public Task StopAsync(CancellationToken cancellationToken)
+        public async Task StopAsync(CancellationToken cancellationToken)
         {
+            await HandleException(new BackgroundWorkerStoppedException(typeof(BackgroundWorkerStandings)));
             _timerMain?.Dispose();
-            return Task.CompletedTask;
         }
 
     }

@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
+using MyResumeSiteBackEnd.Exceptions;
 using MyResumeSiteBackEnd.Hubs;
 using MyResumeSiteBackEnd.Services;
 
@@ -80,25 +81,30 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
                 }
                 catch (Exception ex)
                 {
-                    AddEvent("Exception", ex);
-                    _logger.LogError(ex, "Error occured {@ex}", ex);
+                    await HandleException(ex);
 
-                    Last10Exceptions.Insert(0, ex);
-                    int count = Last10Exceptions.Count;
-                    if (count > 10)
-                    {
-                        Last10Exceptions.RemoveAt(count - 1);
-                    }
-
-                    if (!VariablesCore.ServerUrl.Contains("local"))
-                    {
-                        await _emailService.SendAsyncToAdminException(ex);
-                    }
-
-                    
                 }
                 isProcessing = false;
             }
+        }
+
+        private async Task HandleException(Exception ex)
+        {
+            if (!VariablesCore.ServerUrl.Contains("local"))
+            {
+                await _emailService.SendAsyncToAdminException(ex);
+            }
+            AddEvent("Exception", ex);
+            _logger.LogError(ex, "Error occured {@ex}", ex);
+
+            Last10Exceptions.Insert(0, ex);
+            int count = Last10Exceptions.Count;
+            if (count > 10)
+            {
+                Last10Exceptions.RemoveAt(count - 1);
+            }
+
+           
         }
 
         private void SetTimerToBroadCastTime()
@@ -193,13 +199,10 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
         }
 
 
-        public Task StopAsync(CancellationToken cancellationToken)
+        public async Task StopAsync(CancellationToken cancellationToken)
         {
+            await HandleException(new BackgroundWorkerStoppedException(typeof(BackgroundMatchBroadcaster)));
             _timer?.Dispose();
-
-            AddEvent("Stop Async Called");
-
-            return Task.CompletedTask;
         }
 
     }
