@@ -127,7 +127,7 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
             _isOnBroadcastTimer = false;
             if (_timer == null)
             {
-                _timer = new Timer(Process, null, TimeSpan.FromSeconds(15), amountOfTimeBeforeNextCall);
+                _timer = new Timer(Process, null, TimeSpan.FromSeconds(0), amountOfTimeBeforeNextCall);
                 _isOnBroadcastTimer = true;
             }
             else

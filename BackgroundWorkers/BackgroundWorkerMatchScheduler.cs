@@ -41,7 +41,7 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
         }
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            _timer = new Timer(Process, cancellationToken, TimeSpan.FromSeconds(15), TimeSpan.FromHours(24));
+            _timer = new Timer(Process, cancellationToken, TimeSpan.FromSeconds(0), TimeSpan.FromHours(24));
             if (!VariablesCore.ServerUrl.Contains("local"))
             {
                 await _emailService.SendEmail("tisquip6@gmail.com", "Background Service Started", $"BackgroundWorkerMatchScheduler started on {VariablesCore.ServerUrl}");

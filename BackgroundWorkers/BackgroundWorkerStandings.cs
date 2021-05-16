@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
@@ -40,7 +41,7 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
         }
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            _timerMain = new Timer(Process, cancellationToken, TimeSpan.FromMinutes(1), TimeSpan.FromHours(1));
+            _timerMain = new Timer(Process, cancellationToken, TimeSpan.FromSeconds(0), TimeSpan.FromHours(1));
 
             if (!VariablesCore.ServerUrl.Contains("local"))
             {
@@ -56,12 +57,13 @@ namespace MyResumeSiteBackEnd.BackgroundWorkers
                 if (!isProcessing)
                 {
                     isProcessing = true;
-                    AddEvent("Processing Started with Leagues", BackgroundWorkerMatchScheduler.Leagues?.data);
+                    var leagues = await _httpClient.GetFromJsonAsync<Leagues>($"{Variables.SportsMonkApiBaseUrl}leagues{Variables.GetApiKeyUrlFormatted(_apiKey)}");
+                    AddEvent("Processing Started with Leagues", leagues?.data);
                     try
                     {
                         StandingsApiResponsesWithLeague = new List<StandingsApiResponseWithLeagueData>();
                         string urlLeaguesBase = "https://soccer.sportmonks.com/api/v2.0/standings/season/";
-                        foreach (var league in BackgroundWorkerMatchScheduler.Leagues.data)
+                        foreach (var league in leagues.data)
                         {
                             try
                             {
