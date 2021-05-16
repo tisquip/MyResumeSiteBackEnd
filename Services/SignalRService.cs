@@ -85,7 +85,6 @@ namespace MyResumeSiteBackEnd.Services
                 catch (Exception ex)
                 {
                     string m = ex.Message;
-                    throw;
                 }
                
                 await _notificationService.Notify($"Real Time Connection State : {HubConnection.State}");

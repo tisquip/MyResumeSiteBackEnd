@@ -19,7 +19,8 @@ namespace MyResumeSiteBackEnd.Controllers
             {
                 return Ok(BackgroundWorkerStandings.StandingsApiResponsesWithLeague);
             }
-            return NotFound();
+            return NotFound("Data from third party api was unavailable");
+
         }
 
         [HttpGet("LiveMatches")]
@@ -29,7 +30,7 @@ namespace MyResumeSiteBackEnd.Controllers
             {
                 return Ok(BackgroundMatchBroadcaster.FixturesLive);
             }
-            return NotFound();
+            return NotFound("Data from third party api was unavailable");
         }
 
         [HttpGet("Schedule")]
@@ -44,7 +45,7 @@ namespace MyResumeSiteBackEnd.Controllers
                 };
                 return Ok(fixturesWithLeagues);
             }
-            return NotFound();
+            return NotFound("Data from third party api was unavailable");
         }
     }
 }
