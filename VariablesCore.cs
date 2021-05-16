@@ -11,7 +11,7 @@ namespace MyResumeSiteModels
         public static string SignalRMethodNameFixturesUpdated => "RealTimeFixturesChanged";
         public static string SignalRMethodNameLiveMatch => "RealTimeLiveMatch";
         public static string SignalRMethodNameStandings => "RealTimeStandings";
-        public static string ServerUrl => "https://myresumesitebackend.azurewebsites.net"; //"https://localhost:44371/";
+        public static string ServerUrl => "https://myresumesitebackend.azurewebsites.net/"; //"https://localhost:44371/";
         public static int JustForTriggerUpdateInGithub => 2;
 
         public static string SignalRFullEndpoint()
